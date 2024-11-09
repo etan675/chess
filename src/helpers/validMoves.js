@@ -115,9 +115,18 @@ const bishop = (player, currPos, newPos, board) => {
 }
 
 const knight = (player, currPos, newPos, board) => {
-    // implement
+    const yDistance = Math.abs(newPos.row - currPos.row);
+    const xDistance = Math.abs(newPos.col - currPos.col);
 
-    return true;
+    const validJump = (
+        (yDistance === 1 || yDistance === 2) &&
+        (xDistance === 1 || xDistance === 2) &&
+        yDistance + xDistance === 3
+    );
+
+    const validLanding = board[newPos.row][newPos.col] === 0 || !isPlayerPiece(board[newPos.row][newPos.col], player);
+
+    return validJump && validLanding;
 }
 
 const queen = (player, currPos, newPos, board) => {
@@ -125,9 +134,10 @@ const queen = (player, currPos, newPos, board) => {
 }
 
 const king = (player, currPos, newPos, board) => {
-    // implement
+    const moveOneSquare = Math.abs(newPos.row - currPos.row) <= 1 && Math.abs(newPos.col - currPos.col) <= 1;
+    const validLanding = board[newPos.row][newPos.col] === 0 || !isPlayerPiece(board[newPos.row][newPos.col], player);
 
-    return true;
+    return moveOneSquare && validLanding;
 }
 
 export {
