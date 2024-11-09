@@ -28,6 +28,12 @@ const Game = () => {
             setBlackTakenPieces(prev => [...prev, pieceId])
         }
     }
+
+    const onRestart = () => {
+        setPlayerTurn('w');
+        setWhiteTakenPieces([]);
+        setBlackTakenPieces([]);
+    }
     
     return (
         <div className='flex flex-col items-center gap-3 py-3'>
@@ -42,6 +48,7 @@ const Game = () => {
                 playerTurn={playerTurn}
                 changeTurn={changeTurn}
                 onPieceTaken={onPieceTaken}
+                onRestart={onRestart}
             />
             <div className='player-taken-pieces-container'>
                 {blackTakenPieces.map(pieceId => {

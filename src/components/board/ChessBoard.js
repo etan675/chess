@@ -9,6 +9,8 @@ import { BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_
 //TODO: 
 //possible features:
 
+// implement castle
+
 // prevent illegal moves
 
 // undo/redo
@@ -17,7 +19,7 @@ import { BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_
 
 // backend
 
-const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken }) => {
+const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
   const [board, setBoard] = useState(startBoard);
   const [winner, setWinner] = useState(null);
 
@@ -109,8 +111,17 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken }) => {
     }
   }
 
-  const onRestart = () => {
+  const _onRestart = () => {
+    onRestart();
+
     setWinner(null);
+
+    setPrevMove({
+      movedPiece: 0,
+      prevPos: { row: -1, col: -1 },
+      newPos: { row: -1, col: -1 },
+      pieceTaken: 0
+    });
 
     setBoard(startBoard);
   }
@@ -121,7 +132,7 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken }) => {
         <div className='game-finish-overlay'>
           <div className='game-finish-modal w-40 text-center' >
             <div>Winner is {winner}!</div>
-            <button onClick={onRestart}>Play again</button>
+            <button onClick={_onRestart}>Play again</button>
           </div>
         </div>
       )}
@@ -234,7 +245,7 @@ const startBoard = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
   [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN],
-  [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_PAWN]
+  [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK]
 ];
 
 const alphabetIndex = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
