@@ -46,7 +46,105 @@ const isValidMove = (pieceId, currPos, newPos, board) => {
     }
 }
 
+const getPiecePosition = (pieceId, board) => {
+    const foundPosition = { row: -1, col: -1 };
+
+    board.some((row, rowIndex) => {
+        return row.some((_pieceId, colIndex) => {
+            if (_pieceId === pieceId) {
+                foundPosition.row = rowIndex;
+                foundPosition.col = colIndex;
+            }
+        })
+    })
+
+    return foundPosition;
+}
+
+const isHorizontalPathClear = (currPos, targetPos, board) => {
+    const validHorizontal = targetPos.row === currPos.row && targetPos.col !== currPos.col;
+
+    if (!validHorizontal) {
+        return false;
+    }
+
+    let smallerX = Math.min(currPos.col, targetPos.col);
+    let biggerX = Math.max(currPos.col, targetPos.col);
+
+    for (let x = smallerX + 1; x < biggerX; x++) {
+        if (board[currPos.row][x] !== 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+const isVerticalPathClear = (currPos, targetPos, board) => {
+    const validVertical = targetPos.col === currPos.col && targetPos.row !== currPos.row;
+
+    if (!validVertical) {
+        return false;
+    }
+
+    let smallerY = Math.min(currPos.row, targetPos.row);
+    let biggerY = Math.max(currPos.row, targetPos.row);
+
+    for (let y = smallerY + 1; y < biggerY; y++) {
+        if (board[y][currPos.col] !== 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+const isDiagonalPathClear = (currPos, newPos, board) => {
+    const validDiagonal = (
+        newPos.row !== currPos.row &&
+        newPos.col !== currPos.col &&
+        Math.abs(newPos.row - currPos.row) === Math.abs(newPos.col - currPos.col)
+    );
+
+    if (!validDiagonal) {
+        return false;
+    }
+
+    let smallerY = Math.min(currPos.row, newPos.row);
+    let biggerY = Math.max(currPos.row, newPos.row);
+    let startX;
+    let endX;
+    let xDirection;
+
+    if (smallerY === currPos.row) {
+        startX = currPos.col;
+        endX = newPos.col;
+
+    } else if (smallerY === newPos.row) {
+        startX = newPos.col;
+        endX = currPos.col;
+    }
+
+    xDirection = startX < endX ? 1 : -1;
+
+    let x = startX + xDirection;
+
+    for (let y = smallerY + 1; y < biggerY; y++) {
+        if (board[y][x] !== 0) {
+            return false;
+        }
+
+        x += xDirection;
+    }
+
+    return true;
+}
+
 export {
     isPlayerPiece,
-    isValidMove
+    isValidMove,
+    getPiecePosition,
+    isHorizontalPathClear,
+    isVerticalPathClear,
+    isDiagonalPathClear
 }

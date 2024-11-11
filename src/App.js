@@ -5,7 +5,7 @@ import Game from './components/Game'
 const App = () => {
 
   return (
-    <div className='w-screen h-screen bg-slate-600'>
+    <div className='min-w-[100vw] min-h-[100vh] bg-slate-600'>
       <Content>
         <Game />
       </Content>

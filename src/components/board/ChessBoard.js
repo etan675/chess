@@ -3,15 +3,13 @@ import classNames from 'classnames';
 
 import "../../css/Board.css"
 import Piece from './Piece';
-import { isPlayerPiece, isValidMove } from '../../helpers/utils';
+import { isHorizontalPathClear, isPlayerPiece, isValidMove } from '../../helpers/utils';
 import { BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK } from '../../constants';
 
 //TODO: 
-//possible features:
+//next features:
 
-// implement castle
-
-// prevent illegal moves
+// prevent illegal moves, something like isInCheck
 
 // undo/redo
 
@@ -28,6 +26,15 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
     prevPos: { row: -1, col: -1 },
     newPos: { row: -1, col: -1 },
     pieceTaken: 0
+  });
+
+  const castlePiecesRef = useRef({
+    whiteKing: { hasMoved: false },
+    whiteRookKingSide: { hasMoved: false },
+    whiteRookQueenSide: { hasMoved: false },
+    blackKing: { hasMoved: false },
+    blackRookKingSide: { hasMoved: false },
+    blackRookQueenSide: { hasMoved: false }
   });
 
   const draggedPieceRef = useRef(null);
@@ -55,7 +62,7 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
   }
 
   const onDragOver = (e) => {
-    e.preventDefault()
+    e.preventDefault();
   }
 
   const onPieceDrop = (e, pieceId, row, col) => {
@@ -66,38 +73,13 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
     const draggedPiece = draggedPieceRef.current;
     draggedPieceRef.current = null;
 
-    const validMove = isValidMove(
-      draggedPiece.pieceId,
-      { row: draggedPiece.row, col: draggedPiece.col },
-      { row, col },
-      board
-    );
+    const prevPos = { row: draggedPiece.row, col: draggedPiece.col };
+    const newPos = { row, col };
     
-    if (validMove) {
-      setBoard(prev => {
-        const newBoard = prev.map(row => [...row]);
-  
-        // removed dragged piece from original square
-        newBoard[draggedPiece.row][draggedPiece.col] = 0;
+    if (isValidMove(draggedPiece.pieceId, prevPos, newPos, board)) {
+      handleMovePiece(draggedPiece.pieceId, pieceId, prevPos, newPos)
 
-        // place old piece on dropped pos
-        newBoard[row][col] = draggedPiece.pieceId;
-        
-        return newBoard;
-      })
-
-      if (pieceId !== 0) {
-        // dropped pos had enemy piece
-        onPieceTaken(pieceId);
-      }
-
-      setPrevMove({
-        movedPiece: draggedPiece.pieceId, 
-        prevPos: { row: draggedPiece.row, col: draggedPiece.col },
-        newPos: { row, col },
-        pieceTaken: pieceId
-      });
-
+      // change this this is wrong
       if (pieceId === WHITE_KING) {
         setWinner("Black");
   
@@ -105,9 +87,163 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
         setWinner("White");
   
       } else {
-  
         changeTurn();
       } 
+
+      // check if trying to castle 
+    } else if (draggedPiece.pieceId === WHITE_KING || draggedPiece.pieceId === BLACK_KING) {
+      
+      const isKingSideCastleAttempt = prevPos.row === newPos.row && newPos.col - prevPos.col > 1;
+      const isQueenSideCastleAttempt = prevPos.row === newPos.row && prevPos.col - newPos.col > 1;
+
+      if (playerTurn === 'w' && !castlePiecesRef.current.whiteKing.hasMoved) {
+        if (isKingSideCastleAttempt && isHorizontalPathClear(prevPos, newPos, board)) {
+          handleWhiteKingSideCastle();
+          changeTurn();
+        }
+
+        if (isQueenSideCastleAttempt && isHorizontalPathClear(prevPos, newPos, board)) {
+          handleWhiteQueenSideCastle();
+          changeTurn();
+        }
+      }
+
+      if (playerTurn === 'b' && !castlePiecesRef.current.blackKing.hasMoved) {
+        if (isKingSideCastleAttempt && isHorizontalPathClear(prevPos, newPos, board)) {
+          handleBlackKingSideCastle();
+          changeTurn();
+        }
+
+        if (isQueenSideCastleAttempt && isHorizontalPathClear(prevPos, newPos, board)) {
+          handleBlackQueenSideCastle();
+          changeTurn();
+        }
+      }
+    }
+  }
+
+  const handleMovePiece = (draggedPieceId, droppedPieceId, prevPos, newPos) => {
+    setBoard(prev => {
+      const newBoard = prev.map(row => [...row]);
+
+      // removed dragged piece from original square
+      newBoard[prevPos.row][prevPos.col] = 0;
+      // place old piece on dropped pos
+      newBoard[newPos.row][newPos.col] = draggedPieceId;
+      
+      return newBoard;
+    })
+
+    if (droppedPieceId !== 0) {
+      // dropped pos had enemy piece
+      onPieceTaken(droppedPieceId);
+    }
+
+    setPrevMove({ 
+      movedPiece: draggedPieceId, 
+      prevPos,
+      newPos, 
+      pieceTaken: droppedPieceId
+    });
+  }
+
+  const handleWhiteKingSideCastle = () => {
+    if (!castlePiecesRef.current.whiteKing.hasMoved && !castlePiecesRef.current.whiteRookKingSide.hasMoved) {
+      setBoard(prev => {
+        const newBoard = prev.map(row => [...row]);
+  
+        newBoard[7][4] = 0;
+        newBoard[7][6] = WHITE_KING;
+        newBoard[7][7] = 0;
+        newBoard[7][5] = WHITE_ROOK;
+  
+        castlePiecesRef.current.whiteKing.hasMoved = true;
+        castlePiecesRef.current.whiteRookKingSide.hasMoved = true;
+         
+        return newBoard;
+      });
+
+      setPrevMove({
+        movedPiece: WHITE_KING,
+        prevPos: { row: 7, col: 4 },
+        newPos: { row: 7, col: 6 },
+        pieceTaken: 0
+      });
+    }
+  }
+
+  const handleWhiteQueenSideCastle = () => {
+    if (!castlePiecesRef.current.whiteKing.hasMoved && !castlePiecesRef.current.whiteRookQueenSide.hasMoved) {
+      setBoard(prev => {
+        const newBoard = prev.map(row => [...row]);
+  
+        newBoard[7][4] = 0;
+        newBoard[7][2] = WHITE_KING;
+        newBoard[7][0] = 0;
+        newBoard[7][3] = WHITE_ROOK;
+  
+        castlePiecesRef.current.whiteKing.hasMoved = true;
+        castlePiecesRef.current.whiteRookQueenSide.hasMoved = true;
+         
+        return newBoard;
+      });
+
+      setPrevMove({
+        movedPiece: WHITE_KING,
+        prevPos: { row: 7, col: 4 },
+        newPos: { row: 7, col: 2 },
+        pieceTaken: 0
+      });
+    }
+  }
+
+  const handleBlackKingSideCastle = () => {
+    if (!castlePiecesRef.current.blackKing.hasMoved && !castlePiecesRef.current.blackRookKingSide.hasMoved) {
+      setBoard(prev => {
+        const newBoard = prev.map(row => [...row]);
+  
+        newBoard[0][4] = 0;
+        newBoard[0][6] = BLACK_KING;
+        newBoard[0][7] = 0;
+        newBoard[0][5] = BLACK_ROOK;
+  
+        castlePiecesRef.current.blackKing.hasMoved = true;
+        castlePiecesRef.current.blackRookKingSide.hasMoved = true;
+         
+        return newBoard;
+      });
+
+      setPrevMove({
+        movedPiece: BLACK_KING,
+        prevPos: { row: 0, col: 4 },
+        newPos: { row: 0, col: 6 },
+        pieceTaken: 0
+      });
+    }
+  }
+
+  const handleBlackQueenSideCastle = () => {
+    if (!castlePiecesRef.current.blackKing.hasMoved && !castlePiecesRef.current.blackRookQueenSide.hasMoved) {
+      setBoard(prev => {
+        const newBoard = prev.map(row => [...row]);
+  
+        newBoard[0][4] = 0;
+        newBoard[0][2] = BLACK_KING;
+        newBoard[0][0] = 0;
+        newBoard[0][3] = BLACK_ROOK;
+  
+        castlePiecesRef.current.blackKing.hasMoved = true;
+        castlePiecesRef.current.blackRookQueenSide.hasMoved = true;
+         
+        return newBoard;
+      });
+
+      setPrevMove({
+        movedPiece: BLACK_KING,
+        prevPos: { row: 0, col: 4 },
+        newPos: { row: 0, col: 2 },
+        pieceTaken: 0
+      });
     }
   }
 
@@ -124,6 +260,15 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
     });
 
     setBoard(startBoard);
+
+    castlePiecesRef.current = {
+      whiteKing: { hasMoved: false },
+      whiteRookKingSide: { hasMoved: false },
+      whiteRookQueenSide: { hasMoved: false },
+      blackKing: { hasMoved: false },
+      blackRookKingSide: { hasMoved: false },
+      blackRookQueenSide: { hasMoved: false }
+    };
   }
   
   return (
@@ -174,8 +319,8 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
                     className={classNames(
                       'game-square',
                       'relative',
-                      { 'bg-[brown]': !lightSquare },
-                      { 'bg-[beige]': lightSquare },
+                      { 'bg-[rgb(184,139,74)]': !lightSquare },
+                      { 'bg-[rgb(227,193,111)]': lightSquare },
                       { 'light-square-move-highlight': isPrevMove && lightSquare },
                       { 'dark-square-move-highlight': isPrevMove && !lightSquare }
                     )}
@@ -194,8 +339,8 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
                     {showIndex && (
                       <div className={classNames(
                         'game-square-number-index',
-                        { 'text-[beige]': !lightSquare },
-                        { 'text-[brown]': lightSquare }
+                        { 'text-[rgb(227,193,111)]': !lightSquare },
+                        { 'text-[rgb(184,139,74)]': lightSquare }
                       )}>
                         {rowIndex}
                       </div>
@@ -204,8 +349,8 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
                     {showAlphabet && (
                       <div className={classNames(
                         'game-square-alphabet-index',
-                        { 'text-[brown]': lightSquare },
-                        { 'text-[beige]': !lightSquare }
+                        { 'text-[rgb(184,139,74)]': lightSquare },
+                        { 'text-[rgb(227,193,111)]': !lightSquare }
                       )}>
                         {alphabetIndex[j]}
                       </div>

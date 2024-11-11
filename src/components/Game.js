@@ -40,7 +40,7 @@ const Game = () => {
             <div className='player-taken-pieces-container'>
                 {whiteTakenPieces.map(pieceId => {
                     return (
-                        <div className='w-10 h-10'>{PIECE_ICONS[pieceId]}</div>
+                        <div className='w-8 h-8'>{PIECE_ICONS[pieceId]}</div>
                     )
                 })}
             </div>
@@ -53,7 +53,7 @@ const Game = () => {
             <div className='player-taken-pieces-container'>
                 {blackTakenPieces.map(pieceId => {
                     return (
-                        <div className='w-10 h-10'>{PIECE_ICONS[pieceId]}</div>
+                        <div className='w-8 h-8'>{PIECE_ICONS[pieceId]}</div>
                     )
                 })}
             </div>
