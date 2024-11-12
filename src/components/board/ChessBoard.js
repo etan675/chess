@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import classNames from 'classnames';
 
 import "../../css/Board.css"
-import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares } from '../../helpers/utils';
+import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../helpers/utils';
 import { PIECE_ICONS, BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK } from '../../constants';
 
 const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
@@ -29,6 +29,14 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
 
   const draggedPieceRef = useRef(null);
   const draggedOverSquareRef = useRef(null);
+
+  useEffect(() => {
+    if (isInCheck(playerTurn, board)) {
+      if (isCheckMate(playerTurn, board)) {
+        setWinner(playerTurn === 'w' ? 'White' : 'Black');
+      }
+    }
+  }, [playerTurn, board]);
 
   const onPieceDragStart = (e, pieceId, row, col) => {
     draggedPieceRef.current = { pieceId, row, col };
@@ -271,7 +279,7 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
   return (
     <div className='board'>
       {winner && (
-        <div className='absolute w-full h-full bg-[rgba(255, 255, 255, 0.7)] z-50'>
+        <div className='absolute w-full h-full bg-gray-300 bg-opacity-70 z-50'>
           <div className='absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-40 text-center' >
             <div>Winner is {winner}!</div>
             <button onClick={_onRestart}>Play again</button>

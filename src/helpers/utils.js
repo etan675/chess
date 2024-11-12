@@ -184,6 +184,42 @@ const isLegalMove = (player, pieceId, currPos, newPos, board) => {
     return !isInCheck(player, newBoard);
 }
 
+const getLegalSquares = (player, pieceId, currPos, board) => {
+    const legalMoves = [];
+
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[i].length; j++) {
+            const newPos = { row: i, col: j };
+
+            if (isLegalMove(player, pieceId, currPos, newPos, board)) {
+                legalMoves.push(newPos);
+            }
+        }
+    }
+
+    return legalMoves;
+}
+
+const isCheckMate = (player, board) => {
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[i].length; j++) {
+            const currPieceId = board[i][j];
+
+            if (isPlayerPiece(currPieceId, player)) {
+                const currPos = { row: i, col: j };
+
+                const legalSquares = getLegalSquares(player, currPieceId, currPos, board);
+
+                if (legalSquares.length) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 const isKingsideCastleAttempt = (player, draggedPieceId, currPos, newPos) => {
     // if a player drags their king more than one square horizontally, it is considered a castle attempt
 
@@ -204,22 +240,6 @@ const isQueensideCastleAttempt = (player, draggedPieceId, currPos, newPos) => {
     );
 }
 
-const getLegalSquares = (player, pieceId, currPos, board) => {
-    const legalMoves = [];
-
-    for (let i = 0; i < board.length; i++) {
-        for (let j = 0; j < board[i].length; j++) {
-            const newPos = { row: i, col: j };
-
-            if (isLegalMove(player, pieceId, currPos, newPos, board)) {
-                legalMoves.push(newPos);
-            }
-        }
-    }
-
-    return legalMoves;
-}
-
 
 export {
     isPlayerPiece,
@@ -230,5 +250,6 @@ export {
     isLegalMove,
     isKingsideCastleAttempt,
     isQueensideCastleAttempt,
-    getLegalSquares
+    getLegalSquares,
+    isCheckMate
 }
