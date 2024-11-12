@@ -11,7 +11,7 @@ const isPlayerPiece = (pieceId, player) => {
     }
 }
 
-const isValidMove = (pieceId, currPos, newPos, board) => {
+const isValidMoveNaive = (pieceId, currPos, newPos, board) => {
     if (currPos.row === newPos.row && currPos.col === newPos.col) {
         return false;
     }
@@ -54,11 +54,21 @@ const getPiecePosition = (pieceId, board) => {
             if (_pieceId === pieceId) {
                 foundPosition.row = rowIndex;
                 foundPosition.col = colIndex;
+
+                return true;
             }
+
+            return false;
         })
     })
 
     return foundPosition;
+}
+
+const getKingPosition = (player, board) => {
+    const pieceId = player === 'w' ? WHITE_KING : BLACK_KING;
+
+    return getPiecePosition(pieceId, board);
 }
 
 const isHorizontalPathClear = (currPos, targetPos, board) => {
@@ -140,11 +150,85 @@ const isDiagonalPathClear = (currPos, newPos, board) => {
     return true;
 }
 
+const isInCheck = (player, board) => {
+    const kingPos = getKingPosition(player, board);
+
+    // check whether any enemy pieces are attacking our king
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[i].length; j++) {
+            const currPieceId = board[i][j];
+            const currPos = { row: i, col: j };
+            
+            if (!isPlayerPiece(currPieceId, player)) {
+                if (isValidMoveNaive(currPieceId, currPos, kingPos, board)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+const isLegalMove = (player, pieceId, currPos, newPos, board) => {
+    if (!isValidMoveNaive(pieceId, currPos, newPos, board)) {
+        return false;
+    }
+
+    const newBoard = board.map(row => [...row]);
+
+    // simulate the new board state
+    newBoard[currPos.row][currPos.col] = 0;
+    newBoard[newPos.row][newPos.col] = pieceId;
+
+    return !isInCheck(player, newBoard);
+}
+
+const isKingsideCastleAttempt = (player, draggedPieceId, currPos, newPos) => {
+    // if a player drags their king more than one square horizontally, it is considered a castle attempt
+
+    return (
+        ((player === 'w' && draggedPieceId === WHITE_KING) || (player === 'b' && draggedPieceId === BLACK_KING)) &&
+        currPos.row === newPos.row &&
+        newPos.col - currPos.col > 1
+    );
+}
+
+const isQueensideCastleAttempt = (player, draggedPieceId, currPos, newPos) => {
+    // if a player drags their king more than one square horizontally, it is considered a castle attempt
+
+    return (
+        ((player === 'w' && draggedPieceId === WHITE_KING) || (player === 'b' && draggedPieceId === BLACK_KING)) &&
+        currPos.row === newPos.row &&
+        currPos.col - newPos.col > 1
+    );
+}
+
+const getLegalSquares = (player, pieceId, currPos, board) => {
+    const legalMoves = [];
+
+    for (let i = 0; i < board.length; i++) {
+        for (let j = 0; j < board[i].length; j++) {
+            const newPos = { row: i, col: j };
+
+            if (isLegalMove(player, pieceId, currPos, newPos, board)) {
+                legalMoves.push(newPos);
+            }
+        }
+    }
+
+    return legalMoves;
+}
+
+
 export {
     isPlayerPiece,
-    isValidMove,
-    getPiecePosition,
     isHorizontalPathClear,
     isVerticalPathClear,
-    isDiagonalPathClear
+    isDiagonalPathClear,
+    isInCheck,
+    isLegalMove,
+    isKingsideCastleAttempt,
+    isQueensideCastleAttempt,
+    getLegalSquares
 }
