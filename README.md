@@ -1,5 +1,9 @@
 Simple web based chess game, built with react js and tailwind css.
 
+https://etan675.github.io/quick-chess
+
+
+
 Key features/challenges:
 
 Logic for how pieces move:
