@@ -1,35 +1,18 @@
-Simple web based chess game, built with react js and tailwind css.
+Browser chess game, quick and easy way to practice chess by yourself!
 
-https://etan675.github.io/quick-chess
-
-
-
-Key features/challenges:
-
-Logic for how pieces move:
-
-- Coding how every piece should interact with the board, implementation often required intricate array indexing due to needing to know where each piece is on the board and whether they are obstructed the other pieces.
-
-Logic for detecting game state:
-
-- This included detecting checks, pieces under attack, illegal moves, and generating 
-all possible moves in a position to detect checkmate.
-
-Drag and drop:
-
-- Handling nice UI features like highlighting previous move, indicating valid drop zones for each square when a piece is dragged over it, and showing possible moves for a piece after it is picked up.
+https://etan675.github.io/chess
 
 
-TODO: 
+Notes:
 
-optimise detecting checkmate: since we sometimes check for checkmate before their turn anyway, we might as well call isCheckMate() first in those cases, since it generates ALL the legal squares for every move for that turn. We can then use that information when the player goes to make their move.
+- Only works in browser
+- Built with React and Tailwindcss
+- No libraries
 
-pawn promotion:
 
-en passant:
+todo features:
 
-undo/redo:
-
-integrate castle, pawn promotion, en passant into legal move checks:
-
-some form of persistent storage for game state e.g. local storage or backend:
+- persist in local storage 
+- pawn promotion
+- en passant
+- undo/redo
