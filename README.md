@@ -1,18 +1,13 @@
-Browser chess game, quick and easy way to practice chess by yourself!
+Play chess in the browser, quick and easy way to practice!
 
 https://etan675.github.io/chess
 
+Description:
 
-Notes:
+- Static site, no backend state
+- Built with JavaScript, React, and Tailwind
 
-- Only works in browser
-- Built with React and Tailwindcss
-- No libraries
+Todo:
 
-
-todo features:
-
-- persist in local storage 
-- pawn promotion
-- en passant
-- undo/redo
+- Persist game state in local storage
+- Undo/redo
