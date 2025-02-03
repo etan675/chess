@@ -4,8 +4,8 @@ https://etan675.github.io/chess
 
 Description:
 
-- Static site, no backend state
 - Built with JavaScript, React, and Tailwind
+- Static site, no backend state
 
 Todo:
 
