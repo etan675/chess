@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+    /* experimental bg colours */
+    --bg-1: rgb(120, 80, 40);
+    --bg-2: rgb(80, 120, 100);
+
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-2);
+    color: white;
+}

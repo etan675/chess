@@ -279,7 +279,7 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
   return (
     <div className='board'>
       {winner && (
-        <div className='absolute w-full h-full bg-gray-300 bg-opacity-70 z-50'>
+        <div className='absolute w-full h-full bg-gray-300 text-black bg-opacity-70 z-50'>
           <div className='absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-40 text-center' >
             <div>Winner is {winner}!</div>
             <button onClick={_onRestart}>Play again</button>

@@ -39,7 +39,11 @@ const PIECE_ICONS = {
     [BLACK_KING]: <BlackKing />,
 };
 
+const BOARD_STATE_KEY = 'boardState';
+const PLAYER_MOVE_KEY = 'currentMove';
+
 export {
+    // piece ids
     WHITE_PAWN,
     WHITE_BISHOP,
     WHITE_KNIGHT,
@@ -52,5 +56,9 @@ export {
     BLACK_ROOK,
     BLACK_QUEEN,
     BLACK_KING,
+    // piece icons
     PIECE_ICONS,
+    // local storage keys
+    BOARD_STATE_KEY,
+    PLAYER_MOVE_KEY,
 }
