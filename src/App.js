@@ -3,7 +3,7 @@ import Game from './components/Game'
 
 const App = () => {
   return (
-    <Game className='w-[75%] max-w-lg h-full m-auto' />
+    <Game className='max-w-[75%] w-fit h-full m-auto' />
   )
 }
 

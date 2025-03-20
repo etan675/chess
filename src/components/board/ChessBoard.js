@@ -1,11 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames';
 
 import "../../css/Board.css"
-import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../helpers/utils';
+import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../lib/utils';
 import { PIECE_ICONS, BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK } from '../../constants';
+import { subscribe } from '../../lib/events/eventBus';
+import { RESET_BOARD_EVENT } from '../../lib/events/types';
 
-const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
+const ChessBoard = ({ 
+  playerTurn,
+  changeTurn,
+  onPieceTaken,
+  onRestart,
+}) => {
   const [board, setBoard] = useState(START_BOARD);
   const [winner, setWinner] = useState(null);
 
@@ -252,7 +259,7 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
     });
   }
 
-  const _onRestart = () => {
+  const _onRestart = useCallback(() => {
     onRestart();
 
     setWinner(null);
@@ -274,10 +281,18 @@ const ChessBoard = ({ playerTurn, changeTurn, onPieceTaken, onRestart }) => {
       blackRookKingside: { hasMoved: false },
       blackRookQueenside: { hasMoved: false }
     };
-  }
+  }, [onRestart])
+
+  useEffect(() => {
+    const unsubscribe = subscribe(RESET_BOARD_EVENT, () => {
+      _onRestart();
+    });
+
+    return () => unsubscribe();
+  }, [_onRestart]);
 
   return (
-    <div className='board'>
+    <div className='board shadow-lg'>
       {winner && (
         <div className='absolute w-full h-full bg-gray-300 text-black bg-opacity-70 z-50'>
           <div className='absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-40 text-center' >
