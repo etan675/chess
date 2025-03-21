@@ -41,6 +41,8 @@ const PIECE_ICONS = {
 
 const BOARD_STATE_KEY = 'boardState';
 const PLAYER_MOVE_KEY = 'currentMove';
+const WHITE_PIECES_TAKEN_KEY = 'whitePiecesTaken';
+const BLACK_PIECES_TAKEN_KEY = 'blackPiecesTaken';
 
 export {
     // piece ids
@@ -61,4 +63,6 @@ export {
     // local storage keys
     BOARD_STATE_KEY,
     PLAYER_MOVE_KEY,
+    WHITE_PIECES_TAKEN_KEY,
+    BLACK_PIECES_TAKEN_KEY,
 }

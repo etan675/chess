@@ -3,7 +3,7 @@ import classNames from 'classnames';
 
 import "../../css/Board.css"
 import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../lib/utils';
-import { PIECE_ICONS, BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK } from '../../constants';
+import { PIECE_ICONS, BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK, BOARD_STATE_KEY } from '../../constants';
 import { subscribe } from '../../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../../lib/events/types';
 
@@ -13,7 +13,10 @@ const ChessBoard = ({
   onPieceTaken,
   onRestart,
 }) => {
-  const [board, setBoard] = useState(START_BOARD);
+  const savedBoardStr = sessionStorage.getItem(BOARD_STATE_KEY);
+  const savedBoard = savedBoardStr ? JSON.parse(savedBoardStr) : null;
+
+  const [board, setBoard] = useState(savedBoard || START_BOARD);
   const [winner, setWinner] = useState(null);
 
   const [prevMove, setPrevMove] = useState({
@@ -33,7 +36,7 @@ const ChessBoard = ({
     blackRookKingside: { hasMoved: false },
     blackRookQueenside: { hasMoved: false }
   });
-
+  
   const draggedPieceRef = useRef(null);
   const draggedOverSquareRef = useRef(null);
 
@@ -44,6 +47,10 @@ const ChessBoard = ({
       }
     }
   }, [playerTurn, board]);
+
+  useEffect(() => {
+    sessionStorage.setItem(BOARD_STATE_KEY, JSON.stringify(board));
+  }, [board]);
 
   const onPieceDragStart = (e, pieceId, row, col) => {
     draggedPieceRef.current = { pieceId, row, col };

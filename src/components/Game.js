@@ -1,15 +1,28 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import ChessBoard from './board/ChessBoard';
 import { isPlayerPiece } from '../lib/utils';
-import { PIECE_ICONS } from '../constants';
+import { BLACK_PIECES_TAKEN_KEY, PIECE_ICONS, PLAYER_MOVE_KEY, WHITE_PIECES_TAKEN_KEY } from '../constants';
 import classNames from 'classnames';
 import { publish } from '../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../lib/events/types';
 
 const Game = ({ className }) => {
-    const [playerTurn, setPlayerTurn] = useState('w');
-    const [whiteTakenPieces, setWhiteTakenPieces] = useState([]);
-    const [blackTakenPieces, setBlackTakenPieces] = useState([]);
+    // parse saved state from session storage
+    const savedPlayerTurn = sessionStorage.getItem(PLAYER_MOVE_KEY);
+    const savedWpTakenStr = sessionStorage.getItem(WHITE_PIECES_TAKEN_KEY);
+    const savedWpTaken = savedWpTakenStr ? JSON.parse(savedWpTakenStr) : null;
+    const savedBpTakenStr = sessionStorage.getItem(BLACK_PIECES_TAKEN_KEY);
+    const savedBpTaken = savedBpTakenStr ? JSON.parse(savedBpTakenStr) : null;
+
+    const [playerTurn, setPlayerTurn] = useState(savedPlayerTurn || 'w');
+    const [whiteTakenPieces, setWhiteTakenPieces] = useState(savedWpTaken || []);
+    const [blackTakenPieces, setBlackTakenPieces] = useState(savedBpTaken || []);
+
+    useEffect(() => {
+        sessionStorage.setItem(PLAYER_MOVE_KEY, playerTurn);
+        sessionStorage.setItem(WHITE_PIECES_TAKEN_KEY, JSON.stringify(whiteTakenPieces));
+        sessionStorage.setItem(BLACK_PIECES_TAKEN_KEY, JSON.stringify(blackTakenPieces));
+    }, [playerTurn, whiteTakenPieces, blackTakenPieces])
 
     const changeTurn = () => {
         setPlayerTurn(prev => {
