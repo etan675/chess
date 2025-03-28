@@ -1,23 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames';
 
 import "../../css/Board.css"
 import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../lib/utils';
-import { PIECE_ICONS, BLACK_BISHOP, BLACK_KING, BLACK_KNIGHT, BLACK_PAWN, BLACK_QUEEN, BLACK_ROOK, WHITE_BISHOP, WHITE_KING, WHITE_KNIGHT, WHITE_PAWN, WHITE_QUEEN, WHITE_ROOK, BOARD_STATE_KEY } from '../../constants';
+import { PIECE_ICONS, BLACK_KING, BLACK_ROOK, WHITE_KING, WHITE_ROOK, BOARD_STATE_KEY, START_BOARD } from '../../constants';
 import { subscribe } from '../../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../../lib/events/types';
+import boardContext from '../../contexts/board-context';
 
-const ChessBoard = ({ 
+const ChessBoard = ({
   playerTurn,
   changeTurn,
   onPieceTaken,
   onRestart,
 }) => {
-  const savedBoardStr = sessionStorage.getItem(BOARD_STATE_KEY);
-  const savedBoard = savedBoardStr ? JSON.parse(savedBoardStr) : null;
-
-  const [board, setBoard] = useState(savedBoard || START_BOARD);
   const [winner, setWinner] = useState(null);
+
+  const { board, setBoard } = useContext(boardContext);
 
   const [prevMove, setPrevMove] = useState({
     movedPiece: 0,
@@ -36,7 +35,7 @@ const ChessBoard = ({
     blackRookKingside: { hasMoved: false },
     blackRookQueenside: { hasMoved: false }
   });
-  
+
   const draggedPieceRef = useRef(null);
   const draggedOverSquareRef = useRef(null);
 
@@ -58,7 +57,7 @@ const ChessBoard = ({
     const highLightClass = isLightSquare(row, col) ? 'light-square-drag-highlight' : 'dark-square-drag-highlight';
 
     e.target.parentNode.classList.add(highLightClass);
-  
+
     setLegalSquares(getLegalSquares(playerTurn, pieceId, { row, col }, board));
   }
 
@@ -71,7 +70,7 @@ const ChessBoard = ({
       e.currentTarget.classList.add('game-piece-drag-over');
     }
   }
-  
+
   const onPieceDragEnd = (e, row, col) => {
     const highLightClass = isLightSquare(row, col) ? 'light-square-drag-highlight' : 'dark-square-drag-highlight';
 
@@ -86,13 +85,13 @@ const ChessBoard = ({
 
   const onPieceDrop = (e, pieceId, row, col) => {
     e.preventDefault();
-  
+
     const draggedPiece = draggedPieceRef.current;
     draggedPieceRef.current = null;
 
     const prevPos = { row: draggedPiece.row, col: draggedPiece.col };
     const newPos = { row, col };
-    
+
     if (isLegalMove(playerTurn, draggedPiece.pieceId, prevPos, newPos, board)) {
       handleMovePiece(draggedPiece.pieceId, pieceId, prevPos, newPos);
       changeTurn();
@@ -113,7 +112,7 @@ const ChessBoard = ({
       newBoard[prevPos.row][prevPos.col] = 0;
       // place old piece on dropped pos
       newBoard[newPos.row][newPos.col] = draggedPieceId;
-      
+
       return newBoard;
     })
 
@@ -122,27 +121,27 @@ const ChessBoard = ({
       onPieceTaken(droppedPieceId);
     }
 
-    setPrevMove({ 
-      movedPiece: draggedPieceId, 
+    setPrevMove({
+      movedPiece: draggedPieceId,
       prevPos,
-      newPos, 
+      newPos,
       pieceTaken: droppedPieceId
     });
   }
 
   const handleKingsideCastleAttempt = (player) => {
     if (
-      player === 'w' && 
-      !castlePiecesRef.current.whiteKing.hasMoved && 
+      player === 'w' &&
+      !castlePiecesRef.current.whiteKing.hasMoved &&
       !castlePiecesRef.current.whiteRookKingside.hasMoved &&
       isHorizontalPathClear(WK_START_POS, WRK_START_POS, board)
     ) {
       handleWhiteKingsideCastle();
       changeTurn();
     }
-    
+
     if (
-      player === 'b' && 
+      player === 'b' &&
       !castlePiecesRef.current.blackKing.hasMoved &&
       !castlePiecesRef.current.blackRookKingside.hasMoved &&
       isHorizontalPathClear(BK_START_POS, BRK_START_POS, board)
@@ -154,7 +153,7 @@ const ChessBoard = ({
 
   const handleQueensideCastleAttempt = (player) => {
     if (
-      player === 'w' && 
+      player === 'w' &&
       !castlePiecesRef.current.whiteKing.hasMoved &&
       !castlePiecesRef.current.whiteRookQueenside.hasMoved &&
       isHorizontalPathClear(WK_START_POS, WRQ_START_POS, board)
@@ -185,7 +184,7 @@ const ChessBoard = ({
 
       castlePiecesRef.current.whiteKing.hasMoved = true;
       castlePiecesRef.current.whiteRookKingside.hasMoved = true;
-      
+
       return newBoard;
     });
 
@@ -208,7 +207,7 @@ const ChessBoard = ({
 
       castlePiecesRef.current.whiteKing.hasMoved = true;
       castlePiecesRef.current.whiteRookQueenside.hasMoved = true;
-        
+
       return newBoard;
     });
 
@@ -231,7 +230,7 @@ const ChessBoard = ({
 
       castlePiecesRef.current.blackKing.hasMoved = true;
       castlePiecesRef.current.blackRookKingside.hasMoved = true;
-        
+
       return newBoard;
     });
 
@@ -254,7 +253,7 @@ const ChessBoard = ({
 
       castlePiecesRef.current.blackKing.hasMoved = true;
       castlePiecesRef.current.blackRookQueenside.hasMoved = true;
-        
+
       return newBoard;
     });
 
@@ -288,7 +287,7 @@ const ChessBoard = ({
       blackRookKingside: { hasMoved: false },
       blackRookQueenside: { hasMoved: false }
     };
-  }, [onRestart])
+  }, [onRestart, setBoard])
 
   useEffect(() => {
     const unsubscribe = subscribe(RESET_BOARD_EVENT, () => {
@@ -317,7 +316,7 @@ const ChessBoard = ({
                 const draggable = isPlayerPiece(pieceId, playerTurn);
 
                 const lightSquare = isLightSquare(i, j);
-                
+
                 const onDragStart = (e) => {
                   onPieceDragStart(e, pieceId, i, j);
                 }
@@ -336,7 +335,7 @@ const ChessBoard = ({
                 const rowIndex = 8 - i;
 
                 const isPrevMove = (
-                  (prevMove.prevPos.row === i && prevMove.prevPos.col === j) || 
+                  (prevMove.prevPos.row === i && prevMove.prevPos.col === j) ||
                   (prevMove.newPos.row === i && prevMove.newPos.col === j)
                 );
 
@@ -345,7 +344,7 @@ const ChessBoard = ({
                 });
 
                 return (
-                  <div 
+                  <div
                     key={`${i}-${j}`}
                     className={classNames(
                       'game-square',
@@ -395,40 +394,13 @@ const ChessBoard = ({
                   </div>
                 )
               })}
-          </div>
+            </div>
           )
         })}
       </div>
     </div>
   )
 }
-
-// 0: empty square
-
-// 1: white pawn
-// 2: white bishop
-// 3: white knight
-// 4: white rook
-// 5: white queen
-// 6: white knight
-
-// 7: black pawn
-// 8: black bishop
-// 9: black knight
-// 10: black rook
-// 11: black queen
-// 12: black king
-
-const START_BOARD = [
-  [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK], 
-  [BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN],
-  [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK]
-];
 
 const WK_START_POS = { row: 7, col: 4 };
 const WRK_START_POS = { row: 7, col: 7 };

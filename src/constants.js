@@ -44,6 +44,32 @@ const PLAYER_MOVE_KEY = 'currentMove';
 const WHITE_PIECES_TAKEN_KEY = 'whitePiecesTaken';
 const BLACK_PIECES_TAKEN_KEY = 'blackPiecesTaken';
 
+// 0: empty square
+
+// 1: white pawn
+// 2: white bishop
+// 3: white knight
+// 4: white rook
+// 5: white queen
+// 6: white knight
+
+// 7: black pawn
+// 8: black bishop
+// 9: black knight
+// 10: black rook
+// 11: black queen
+// 12: black king
+const START_BOARD = [
+    [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK], 
+    [BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN],
+    [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK]
+  ];
+
 export {
     // piece ids
     WHITE_PAWN,
@@ -65,4 +91,5 @@ export {
     PLAYER_MOVE_KEY,
     WHITE_PIECES_TAKEN_KEY,
     BLACK_PIECES_TAKEN_KEY,
+    START_BOARD
 }
