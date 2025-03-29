@@ -1,5 +1,5 @@
 import { createContext } from "react";
 
-const boardContext = createContext(null);
+const BoardContext = createContext(null);
 
-export default boardContext;
+export default BoardContext;

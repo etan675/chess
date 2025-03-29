@@ -1,14 +1,27 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import ChessBoard from './board/ChessBoard';
 import { isPlayerPiece } from '../lib/utils';
-import { BLACK_PIECES_TAKEN_KEY, PIECE_ICONS, PLAYER_MOVE_KEY, WHITE_PIECES_TAKEN_KEY } from '../constants';
+import { BLACK_PIECES_TAKEN_KEY, BOARD_STATE_KEY, PIECE_ICONS, PLAYER_MOVE_KEY, START_BOARD, WHITE_PIECES_TAKEN_KEY } from '../constants';
 import classNames from 'classnames';
 import { publish } from '../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../lib/events/types';
-import BoardContextProvider from '../context-providers/BoardContextProvider';
+import BoardContext from '../contexts/board-context';
+
+//TODO:
+const reducer = (currState, action) => {
+    if (action.type === 'moveComplete') {
+    
+    }
+}
 
 const Game = ({ className }) => {
-    // parse saved state from session storage
+    const savedBoardStr = sessionStorage.getItem(BOARD_STATE_KEY);
+    const savedBoard = savedBoardStr ? JSON.parse(savedBoardStr) : null;
+
+    //TODO: 
+    // Can refactor this to useReducer, including board history.
+    const [board, setBoard] = useState(savedBoard || START_BOARD);
+
     const savedPlayerTurn = sessionStorage.getItem(PLAYER_MOVE_KEY);
     const savedWpTakenStr = sessionStorage.getItem(WHITE_PIECES_TAKEN_KEY);
     const savedWpTaken = savedWpTakenStr ? JSON.parse(savedWpTakenStr) : null;
@@ -23,7 +36,8 @@ const Game = ({ className }) => {
         sessionStorage.setItem(PLAYER_MOVE_KEY, playerTurn);
         sessionStorage.setItem(WHITE_PIECES_TAKEN_KEY, JSON.stringify(whiteTakenPieces));
         sessionStorage.setItem(BLACK_PIECES_TAKEN_KEY, JSON.stringify(blackTakenPieces));
-    }, [playerTurn, whiteTakenPieces, blackTakenPieces])
+    }, [playerTurn, whiteTakenPieces, blackTakenPieces]);
+
 
     const changeTurn = () => {
         setPlayerTurn(prev => {
@@ -58,7 +72,7 @@ const Game = ({ className }) => {
     }, [restartGame]);
 
     return (
-        <BoardContextProvider>
+        <BoardContext.Provider value={{ board, setBoard }}>
             <div className={classNames(
                 'grid grid-cols-[minmax(min-content,_520px),_minmax(min-content,_380px)]',
                 'rid-rows-[min-content,_1fr,_min-content,_min-content] grid-flow-col',
@@ -105,7 +119,7 @@ const Game = ({ className }) => {
                     </button>
                 </div>
             </div>
-        </BoardContextProvider>
+        </BoardContext.Provider>
     )
 }
 

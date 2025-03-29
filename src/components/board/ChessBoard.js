@@ -98,9 +98,11 @@ const ChessBoard = ({
 
     } else if (isKingsideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
       handleKingsideCastleAttempt(playerTurn);
+      changeTurn();
 
     } else if (isQueensideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
       handleQueensideCastleAttempt(playerTurn);
+      changeTurn();
     }
   }
 
@@ -137,7 +139,6 @@ const ChessBoard = ({
       isHorizontalPathClear(WK_START_POS, WRK_START_POS, board)
     ) {
       handleWhiteKingsideCastle();
-      changeTurn();
     }
 
     if (
@@ -147,7 +148,6 @@ const ChessBoard = ({
       isHorizontalPathClear(BK_START_POS, BRK_START_POS, board)
     ) {
       handleBlackKingsideCastle();
-      changeTurn();
     }
   }
 
@@ -159,7 +159,6 @@ const ChessBoard = ({
       isHorizontalPathClear(WK_START_POS, WRQ_START_POS, board)
     ) {
       handleWhiteQueensideCastle();
-      changeTurn();
     }
 
     if (
@@ -169,7 +168,6 @@ const ChessBoard = ({
       isHorizontalPathClear(BK_START_POS, BRQ_START_POS, board)
     ) {
       handleBlackQueensideCastle();
-      changeTurn();
     }
   }
 
