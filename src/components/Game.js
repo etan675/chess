@@ -10,7 +10,20 @@ import BoardContext from '../contexts/board-context';
 //TODO:
 const reducer = (currState, action) => {
     if (action.type === 'moveComplete') {
-    
+        // action should have the context info for the new move:
+        // pieceId, prevPos, newPos, taken pieceId
+
+        // slice history until the current move index
+        // push new move to history
+        // increment move index
+    }
+
+    if (action.type === 'undo') {
+        // decrement move index
+    }
+
+    if (action.type === 'redo') {
+        // increment move index
     }
 }
 
@@ -19,7 +32,7 @@ const Game = ({ className }) => {
     const savedBoard = savedBoardStr ? JSON.parse(savedBoardStr) : null;
 
     //TODO: 
-    // Can refactor this to useReducer, including board history.
+    // Can refactor this to useReducer, include board history.
     const [board, setBoard] = useState(savedBoard || START_BOARD);
 
     const savedPlayerTurn = sessionStorage.getItem(PLAYER_MOVE_KEY);
