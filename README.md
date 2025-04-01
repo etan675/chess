@@ -4,9 +4,13 @@ Live app:
 
 https://etan675.github.io/chess
 
-Notes:
+Tech stack:
 
-- Built with JavaScript, React, and Tailwind
-- Game state is saved in browser's session storage, persists as long as browser is open
-- Indicates the last move made by highlighted positions on the board
+- JavaScript, React, Tailwind CSS
+
+Features:
+
 - Detects all possible moves when you pick up a piece, as well as which enemy pieces you can take with it
+- Indicates the last move made by highlighted positions on the board
+- Game state saved in browser's session storage, persists as long as browser is open
+- Undo/Redo
