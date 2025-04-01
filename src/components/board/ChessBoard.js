@@ -3,20 +3,19 @@ import classNames from 'classnames';
 
 import "../../css/Board.css"
 import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../lib/utils';
-import { PIECE_ICONS, BLACK_KING, BLACK_ROOK, WHITE_KING, WHITE_ROOK, BOARD_STATE_KEY, START_BOARD } from '../../constants';
+import { PIECE_ICONS, BLACK_KING, WHITE_KING, BOARD_STATE_KEY } from '../../constants';
 import { subscribe } from '../../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../../lib/events/types';
 import boardContext from '../../contexts/board-context';
 
 const ChessBoard = ({
   playerTurn,
-  changeTurn,
   onPieceTaken,
   onRestart,
 }) => {
-  const [winner, setWinner] = useState(null);
+  const { board, onMove, onCastle } = useContext(boardContext);
 
-  const { board, setBoard } = useContext(boardContext);
+  const [winner, setWinner] = useState(null);
 
   const [prevMove, setPrevMove] = useState({
     movedPiece: 0,
@@ -42,7 +41,7 @@ const ChessBoard = ({
   useEffect(() => {
     if (isInCheck(playerTurn, board)) {
       if (isCheckMate(playerTurn, board)) {
-        setWinner(playerTurn === 'w' ? 'White' : 'Black');
+        setWinner(playerTurn === 'b' ? 'White' : 'Black');
       }
     }
   }, [playerTurn, board]);
@@ -94,29 +93,17 @@ const ChessBoard = ({
 
     if (isLegalMove(playerTurn, draggedPiece.pieceId, prevPos, newPos, board)) {
       handleMovePiece(draggedPiece.pieceId, pieceId, prevPos, newPos);
-      changeTurn();
 
     } else if (isKingsideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
       handleKingsideCastleAttempt(playerTurn);
-      changeTurn();
 
     } else if (isQueensideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
       handleQueensideCastleAttempt(playerTurn);
-      changeTurn();
     }
   }
 
   const handleMovePiece = (draggedPieceId, droppedPieceId, prevPos, newPos) => {
-    setBoard(prev => {
-      const newBoard = prev.map(row => [...row]);
-
-      // removed dragged piece from original square
-      newBoard[prevPos.row][prevPos.col] = 0;
-      // place old piece on dropped pos
-      newBoard[newPos.row][newPos.col] = draggedPieceId;
-
-      return newBoard;
-    })
+    onMove(draggedPieceId, prevPos, newPos, droppedPieceId);
 
     if (droppedPieceId !== 0) {
       // dropped pos had enemy piece
@@ -172,19 +159,7 @@ const ChessBoard = ({
   }
 
   const handleWhiteKingsideCastle = () => {
-    setBoard(prev => {
-      const newBoard = prev.map(row => [...row]);
-
-      newBoard[7][4] = 0;
-      newBoard[7][6] = WHITE_KING;
-      newBoard[7][7] = 0;
-      newBoard[7][5] = WHITE_ROOK;
-
-      castlePiecesRef.current.whiteKing.hasMoved = true;
-      castlePiecesRef.current.whiteRookKingside.hasMoved = true;
-
-      return newBoard;
-    });
+    onCastle('w', 'k');
 
     setPrevMove({
       movedPiece: WHITE_KING,
@@ -195,19 +170,7 @@ const ChessBoard = ({
   }
 
   const handleWhiteQueensideCastle = () => {
-    setBoard(prev => {
-      const newBoard = prev.map(row => [...row]);
-
-      newBoard[7][4] = 0;
-      newBoard[7][2] = WHITE_KING;
-      newBoard[7][0] = 0;
-      newBoard[7][3] = WHITE_ROOK;
-
-      castlePiecesRef.current.whiteKing.hasMoved = true;
-      castlePiecesRef.current.whiteRookQueenside.hasMoved = true;
-
-      return newBoard;
-    });
+    onCastle('w', 'q');
 
     setPrevMove({
       movedPiece: WHITE_KING,
@@ -218,19 +181,7 @@ const ChessBoard = ({
   }
 
   const handleBlackKingsideCastle = () => {
-    setBoard(prev => {
-      const newBoard = prev.map(row => [...row]);
-
-      newBoard[0][4] = 0;
-      newBoard[0][6] = BLACK_KING;
-      newBoard[0][7] = 0;
-      newBoard[0][5] = BLACK_ROOK;
-
-      castlePiecesRef.current.blackKing.hasMoved = true;
-      castlePiecesRef.current.blackRookKingside.hasMoved = true;
-
-      return newBoard;
-    });
+    onCastle('b', 'k');
 
     setPrevMove({
       movedPiece: BLACK_KING,
@@ -241,19 +192,7 @@ const ChessBoard = ({
   }
 
   const handleBlackQueensideCastle = () => {
-    setBoard(prev => {
-      const newBoard = prev.map(row => [...row]);
-
-      newBoard[0][4] = 0;
-      newBoard[0][2] = BLACK_KING;
-      newBoard[0][0] = 0;
-      newBoard[0][3] = BLACK_ROOK;
-
-      castlePiecesRef.current.blackKing.hasMoved = true;
-      castlePiecesRef.current.blackRookQueenside.hasMoved = true;
-
-      return newBoard;
-    });
+    onCastle('b', 'q');
 
     setPrevMove({
       movedPiece: BLACK_KING,
@@ -265,7 +204,6 @@ const ChessBoard = ({
 
   const _onRestart = useCallback(() => {
     onRestart();
-
     setWinner(null);
 
     setPrevMove({
@@ -275,8 +213,6 @@ const ChessBoard = ({
       pieceTaken: 0
     });
 
-    setBoard(START_BOARD);
-
     castlePiecesRef.current = {
       whiteKing: { hasMoved: false },
       whiteRookKingside: { hasMoved: false },
@@ -285,7 +221,7 @@ const ChessBoard = ({
       blackRookKingside: { hasMoved: false },
       blackRookQueenside: { hasMoved: false }
     };
-  }, [onRestart, setBoard])
+  }, [onRestart])
 
   useEffect(() => {
     const unsubscribe = subscribe(RESET_BOARD_EVENT, () => {
@@ -301,7 +237,12 @@ const ChessBoard = ({
         <div className='absolute w-full h-full bg-gray-300 text-black bg-opacity-70 z-50'>
           <div className='absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-40 text-center' >
             <div>Winner is {winner}!</div>
-            <button onClick={_onRestart}>Play again</button>
+            <button
+              className='hover:bg-gray-500/10 px-3 py-1 rounded-lg'
+              onClick={_onRestart}
+            >
+              Play again
+            </button>
           </div>
         </div>
       )}
