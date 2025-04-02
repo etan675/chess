@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useReducer, useState } from 'react'
 import ChessBoard from './board/ChessBoard';
 import { isPlayerPiece } from '../lib/utils';
-import { BLACK_KING, BLACK_PIECES_TAKEN_KEY, BLACK_ROOK, BOARD_STATE_KEY, PIECE_ICONS, PLAYER_MOVE_KEY, START_BOARD, WHITE_KING, WHITE_PIECES_TAKEN_KEY, WHITE_ROOK } from '../constants';
+import { BLACK_KING, BLACK_PIECES_TAKEN_KEY, BLACK_ROOK, BOARD_STATE_KEY, BRK_START_POS, BRQ_START_POS, CASTLE_STATE_KEY, PIECE_ICONS, PLAYER_MOVE_KEY, START_BOARD, WHITE_KING, WHITE_PIECES_TAKEN_KEY, WHITE_ROOK, WRK_START_POS, WRQ_START_POS } from '../constants';
 import classNames from 'classnames';
 import { publish } from '../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../lib/events/types';
@@ -15,10 +15,31 @@ const initState = {
         move: null
     }],
     currMoveIndex: 0,
+    castleContext: {
+        wkMoved: false,
+        wrkMoved: false,
+        wrqMoved: false,
+        bkMoved: false,
+        brkMoved: false,
+        brqMoved: false
+    }
+}
+
+// Each move also needs a 'castle context', that way as we navigate 
+// the board states with undo/redo, we are able to determine whether a particular 
+// move was the first time a castle piece was moved, and re-allow castling accordingly.
+const defaultMoveCastleContext = {
+    isCastle: false,
+    wkFirstMove: false,
+    wrkFirstMove: false,
+    wrqFirstMove: false,
+    bkFirstMove: false,
+    brkFirstMove: false,
+    brqFirstMove: false
 }
 
 const reducer = (currState, action) => {
-    const { board, boardHistory, currMoveIndex } = currState;
+    const { board, boardHistory, currMoveIndex, castleContext } = currState;
 
     if (action.type === MOVE) {
         const { movedPieceId, prevPos, newPos, takenPieceId } = action.context;
@@ -29,19 +50,71 @@ const reducer = (currState, action) => {
         newBoard[prevPos.row][prevPos.col] = 0;
         newBoard[newPos.row][newPos.col] = movedPieceId;
 
+        // check if moved one of the castle pieces
+        let wkMoved = movedPieceId === WHITE_KING || castleContext.wkMoved;
+
+        let wrkMoved = (
+            movedPieceId === WHITE_ROOK &&
+            prevPos.row === WRK_START_POS.row &&
+            prevPos.col === WRK_START_POS.col
+        ) || castleContext.wrkMoved;
+
+        let wrqMoved = (
+            movedPieceId === WHITE_ROOK &&
+            prevPos.row === WRQ_START_POS.row &&
+            prevPos.col === WRQ_START_POS.col
+        ) || castleContext.wrqMoved;
+
+        let bkMoved = movedPieceId === BLACK_KING || castleContext.bkMoved;
+
+        let brkMoved = (
+            movedPieceId === BLACK_ROOK &&
+            prevPos.row === BRK_START_POS.row &&
+            prevPos.col === BRK_START_POS.col
+        ) || castleContext.brkMoved;
+
+        let brqMoved = (
+            movedPieceId === BLACK_ROOK &&
+            prevPos.row === BRQ_START_POS.row &&
+            prevPos.col === BRQ_START_POS.col
+        ) || castleContext.brqMoved;
+
         if (currMoveIndex !== boardHistory.length - 1) {
             newBoardHistory = boardHistory.slice(0, currMoveIndex + 1);
         }
 
         newBoardHistory.push({
             board: newBoard,
-            move: { movedPieceId, prevPos, newPos, takenPieceId }
+            move: {
+                movedPieceId,
+                prevPos,
+                newPos,
+                takenPieceId,
+                castleContext: {
+                    ...defaultMoveCastleContext,
+                    wkFirstMove: wkMoved && !castleContext.wkMoved,
+                    wrkFirstMove: wrkMoved && !castleContext.wrkMoved,
+                    wrqFirstMove: wrqMoved && !castleContext.wrqMoved,
+                    bkFirstMove: bkMoved && !castleContext.bkMoved,
+                    brkFirstMove: brkMoved && !castleContext.brkMoved,
+                    brqFirstMove: brqMoved && !castleContext.brqMoved,
+                }
+            }
         });
 
         return {
+            ...currState,
             board: newBoard,
             boardHistory: newBoardHistory,
-            currMoveIndex: currMoveIndex + 1
+            currMoveIndex: currMoveIndex + 1,
+            castleContext: {
+                wkMoved,
+                wrkMoved,
+                wrqMoved,
+                bkMoved,
+                brkMoved,
+                brqMoved,
+            }
         };
     }
 
@@ -52,7 +125,16 @@ const reducer = (currState, action) => {
         let newBoardHistory = [...boardHistory];
         let move = null;
 
+        let wkMoved = castleContext.wkMoved;
+        let wrkMoved = castleContext.wrkMoved;
+        let wrqMoved = castleContext.wrqMoved;
+        let bkMoved = castleContext.bkMoved;
+        let brkMoved = castleContext.brkMoved;
+        let brqMoved = castleContext.brqMoved;
+
         if (player === 'b') {
+            bkMoved = true;
+
             if (side === 'k') {
                 newBoard[0][4] = 0;
                 newBoard[0][6] = BLACK_KING;
@@ -63,8 +145,16 @@ const reducer = (currState, action) => {
                     movedPieceId: BLACK_KING,
                     prevPos: { row: 0, col: 4 },
                     newPos: { row: 0, col: 6 },
-                    takenPieceId: 0
+                    takenPieceId: 0,
+                    castleContext: {
+                        ...defaultMoveCastleContext,
+                        isCastle: true,
+                        bkFirstMove: true,
+                        brkFirstMove: true,
+                    }
                 }
+
+                brkMoved = true;
 
             } else if (side === 'q') {
                 newBoard[0][4] = 0;
@@ -76,11 +166,21 @@ const reducer = (currState, action) => {
                     movedPieceId: BLACK_KING,
                     prevPos: { row: 0, col: 4 },
                     newPos: { row: 0, col: 2 },
-                    takenPieceId: 0
+                    takenPieceId: 0,
+                    castleContext: {
+                        ...defaultMoveCastleContext,
+                        isCastle: true,
+                        bkFirstMove: true,
+                        brqFirstMove: true,
+                    }
                 }
+
+                brqMoved = true;
             }
 
         } else if (player === 'w') {
+            wkMoved = true;
+
             if (side === 'k') {
                 newBoard[7][4] = 0;
                 newBoard[7][6] = WHITE_KING;
@@ -91,8 +191,16 @@ const reducer = (currState, action) => {
                     movedPiece: WHITE_KING,
                     prevPos: { row: 7, col: 4 },
                     newPos: { row: 7, col: 6 },
-                    takenPieceId: 0
+                    takenPieceId: 0,
+                    castleContext: {
+                        ...defaultMoveCastleContext,
+                        isCastle: true,
+                        wkFirstMove: true,
+                        wrkFirstMove: true,
+                    }
                 }
+
+                wrkMoved = true;
 
             } else if (side === 'q') {
                 newBoard[7][4] = 0;
@@ -104,8 +212,16 @@ const reducer = (currState, action) => {
                     movedPiece: WHITE_KING,
                     prevPos: { row: 7, col: 4 },
                     newPos: { row: 7, col: 2 },
-                    takenPieceId: 0
+                    takenPieceId: 0,
+                    castleContext: {
+                        ...defaultMoveCastleContext,
+                        isCastle: true,
+                        wkFirstMove: true,
+                        wrqFirstMove: true,
+                    }
                 }
+
+                wrqMoved = true;
             }
         }
 
@@ -116,29 +232,71 @@ const reducer = (currState, action) => {
         newBoardHistory.push({ board: newBoard, move });
 
         return {
+            ...currState,
             board: newBoard,
             boardHistory: newBoardHistory,
-            currMoveIndex: currMoveIndex + 1
+            currMoveIndex: currMoveIndex + 1,
+            castleContext: {
+                wkMoved,
+                wrkMoved,
+                wrqMoved,
+                bkMoved,
+                brkMoved,
+                brqMoved,
+            }
         }
     }
 
     if (action.type === UNDO) {
+        const moveCastleContext = boardHistory[currMoveIndex].move?.castleContext;
+
+        let wkFirstMove = moveCastleContext?.wkFirstMove || false;
+        let wrkFirstMove = moveCastleContext?.wrkFirstMove || false;
+        let wrqFirstMove = moveCastleContext?.wrqFirstMove || false;
+        let bkFirstMove = moveCastleContext?.bkFirstMove || false;
+        let brkFirstMove = moveCastleContext?.brkFirstMove || false;
+        let brqFirstMove = moveCastleContext?.brqFirstMove || false;
+
         const prevMoveIndex = currMoveIndex - 1;
 
         return {
             ...currState,
             board: boardHistory[prevMoveIndex].board,
             currMoveIndex: prevMoveIndex,
+            castleContext: {
+                wkMoved: wkFirstMove ? false : castleContext.wkMoved,
+                wrkMoved: wrkFirstMove ? false : castleContext.wrkMoved,
+                wrqMoved: wrqFirstMove ? false : castleContext.wrqMoved,
+                bkMoved: bkFirstMove ? false : castleContext.bkMoved,
+                brkMoved: brkFirstMove ? false : castleContext.brkMoved,
+                brqMoved: brqFirstMove ? false : castleContext.brqMoved,
+            }
         }
     }
 
     if (action.type === REDO) {
         const nextMoveIndex = currMoveIndex + 1;
+        const moveCastleContext = boardHistory[nextMoveIndex].move?.castleContext;
+
+        let wkFirstMove = moveCastleContext?.wkFirstMove || false;
+        let wrkFirstMove = moveCastleContext?.wrkFirstMove || false;
+        let wrqFirstMove = moveCastleContext?.wrqFirstMove || false;
+        let bkFirstMove = moveCastleContext?.bkFirstMove || false;
+        let brkFirstMove = moveCastleContext?.brkFirstMove || false;
+        let brqFirstMove = moveCastleContext?.brqFirstMove || false;
 
         return {
             ...currState,
             board: boardHistory[nextMoveIndex].board,
             currMoveIndex: nextMoveIndex,
+            castleContext: {
+                wkMoved: wkFirstMove ? true : castleContext.wkMoved,
+                wrkMoved: wrkFirstMove ? true : castleContext.wrkMoved,
+                wrqMoved: wrqFirstMove ? true : castleContext.wrqMoved,
+                bkMoved: bkFirstMove ? true : castleContext.bkMoved,
+                brkMoved: brkFirstMove ? true : castleContext.brkMoved,
+                brqMoved: brqFirstMove ? true : castleContext.brqMoved,
+            }
         }
     }
 
@@ -152,11 +310,14 @@ const reducer = (currState, action) => {
 const Game = ({ className }) => {
     const savedBoardStr = sessionStorage.getItem(BOARD_STATE_KEY);
     const savedBoard = savedBoardStr ? JSON.parse(savedBoardStr) : null;
+    const savedCastleStateStr = sessionStorage.getItem(CASTLE_STATE_KEY);
+    const savedCastleState = savedCastleStateStr ? JSON.parse(savedCastleStateStr) : null;
 
     const [gameState, dispatch] = useReducer(reducer, {
         ...initState,
         board: savedBoard || START_BOARD,
-        boardHistory: [{ board: savedBoard || START_BOARD, move: null }]
+        boardHistory: [{ board: savedBoard || START_BOARD, move: null }],
+        castleContext: savedCastleState || initState.castleContext
     });
 
     const savedPlayerTurn = sessionStorage.getItem(PLAYER_MOVE_KEY);
@@ -174,6 +335,14 @@ const Game = ({ className }) => {
         sessionStorage.setItem(WHITE_PIECES_TAKEN_KEY, JSON.stringify(whiteTakenPieces));
         sessionStorage.setItem(BLACK_PIECES_TAKEN_KEY, JSON.stringify(blackTakenPieces));
     }, [playerTurn, whiteTakenPieces, blackTakenPieces]);
+
+    useEffect(() => {
+        sessionStorage.setItem(BOARD_STATE_KEY, JSON.stringify(gameState.board));
+    }, [gameState.board]);
+
+    useEffect(() => {
+        sessionStorage.setItem(CASTLE_STATE_KEY, JSON.stringify(gameState.castleContext));
+    }, [gameState.castleContext]);
 
     const changeTurn = () => {
         setPlayerTurn(prev => {
@@ -209,7 +378,8 @@ const Game = ({ className }) => {
     };
 
     const onMove = (movedPieceId, prevPos, newPos, takenPieceId = 0) => {
-        dispatch({ type: MOVE,
+        dispatch({
+            type: MOVE,
             context: {
                 movedPieceId,
                 prevPos,
@@ -248,8 +418,9 @@ const Game = ({ className }) => {
             value={{
                 board: gameState.board,
                 prevMove: gameState.boardHistory[gameState.currMoveIndex]?.move ?? null,
+                castleContext: gameState.castleContext,
                 onMove,
-                onCastle
+                onCastle,
             }}
         >
             <div className={classNames(

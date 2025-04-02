@@ -43,6 +43,7 @@ const BOARD_STATE_KEY = 'boardState';
 const PLAYER_MOVE_KEY = 'currentMove';
 const WHITE_PIECES_TAKEN_KEY = 'whitePiecesTaken';
 const BLACK_PIECES_TAKEN_KEY = 'blackPiecesTaken';
+const CASTLE_STATE_KEY = 'castleState';
 
 // 0: empty square
 
@@ -70,6 +71,19 @@ const START_BOARD = [
     [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK]
 ];
 
+// white king
+const WK_START_POS = { row: 7, col: 4 };
+// white rook kingside
+const WRK_START_POS = { row: 7, col: 7 };
+// white rook queenside
+const WRQ_START_POS = { row: 7, col: 0 };
+// black king
+const BK_START_POS = { row: 0, col: 4 };
+// black rook kingside
+const BRK_START_POS = { row: 0, col: 7 };
+// black rook queenside
+const BRQ_START_POS = { row: 0, col: 0 };
+
 export {
     // piece ids
     WHITE_PAWN,
@@ -91,6 +105,14 @@ export {
     PLAYER_MOVE_KEY,
     WHITE_PIECES_TAKEN_KEY,
     BLACK_PIECES_TAKEN_KEY,
+    CASTLE_STATE_KEY,
     // board
-    START_BOARD
+    START_BOARD,
+    // castle pieces start pos,
+    WK_START_POS,
+    WRK_START_POS,
+    WRQ_START_POS,
+    BK_START_POS,
+    BRK_START_POS,
+    BRQ_START_POS,
 }
