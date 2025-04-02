@@ -10,7 +10,6 @@ import boardContext from '../../contexts/board-context';
 
 const ChessBoard = ({
   playerTurn,
-  onPieceTaken,
   onRestart,
 }) => {
   const { board, prevMove, castleContext, onMove, onCastle } = useContext(boardContext);
@@ -71,22 +70,13 @@ const ChessBoard = ({
     const newPos = { row, col };
 
     if (isLegalMove(playerTurn, draggedPiece.pieceId, prevPos, newPos, board)) {
-      handleMovePiece(draggedPiece.pieceId, pieceId, prevPos, newPos);
+      onMove(draggedPiece.pieceId, prevPos, newPos, pieceId);
 
     } else if (isKingsideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
       handleKingsideCastleAttempt();
 
     } else if (isQueensideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
       handleQueensideCastleAttempt();
-    }
-  }
-
-  const handleMovePiece = (draggedPieceId, droppedPieceId, prevPos, newPos) => {
-    onMove(draggedPieceId, prevPos, newPos, droppedPieceId);
-
-    if (droppedPieceId !== 0) {
-      // dropped pos had enemy piece
-      onPieceTaken(droppedPieceId);
     }
   }
 

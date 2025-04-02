@@ -22,7 +22,9 @@ const initState = {
         bkMoved: false,
         brkMoved: false,
         brqMoved: false
-    }
+    },
+    whitePiecesTaken: [],
+    blackPiecesTaken: []
 }
 
 // Each move also needs a 'castle context', that way as we navigate 
@@ -39,16 +41,24 @@ const defaultMoveCastleContext = {
 }
 
 const reducer = (currState, action) => {
-    const { board, boardHistory, currMoveIndex, castleContext } = currState;
+    const { board, boardHistory, currMoveIndex, castleContext, whitePiecesTaken, blackPiecesTaken } = currState;
 
     if (action.type === MOVE) {
         const { movedPieceId, prevPos, newPos, takenPieceId } = action.context;
 
         let newBoard = board.map(row => [...row]);
         let newBoardHistory = [...boardHistory];
+        let newWhitePiecesTaken = [...whitePiecesTaken];
+        let newBlackPiecesTaken = [...blackPiecesTaken];
 
         newBoard[prevPos.row][prevPos.col] = 0;
         newBoard[newPos.row][newPos.col] = movedPieceId;
+
+        if (isPlayerPiece(takenPieceId, 'w')) {
+            newWhitePiecesTaken.push(takenPieceId);
+        } else if (isPlayerPiece(takenPieceId, 'b')) {
+            newBlackPiecesTaken.push(takenPieceId);
+        }
 
         // check if moved one of the castle pieces
         let wkMoved = movedPieceId === WHITE_KING || castleContext.wkMoved;
@@ -114,7 +124,9 @@ const reducer = (currState, action) => {
                 bkMoved,
                 brkMoved,
                 brqMoved,
-            }
+            },
+            whitePiecesTaken: newWhitePiecesTaken,
+            blackPiecesTaken: newBlackPiecesTaken
         };
     }
 
@@ -248,7 +260,8 @@ const reducer = (currState, action) => {
     }
 
     if (action.type === UNDO) {
-        const moveCastleContext = boardHistory[currMoveIndex].move?.castleContext;
+        const currMove = boardHistory[currMoveIndex].move;
+        const moveCastleContext = currMove?.castleContext;
 
         let wkFirstMove = moveCastleContext?.wkFirstMove || false;
         let wrkFirstMove = moveCastleContext?.wrkFirstMove || false;
@@ -258,6 +271,17 @@ const reducer = (currState, action) => {
         let brqFirstMove = moveCastleContext?.brqFirstMove || false;
 
         const prevMoveIndex = currMoveIndex - 1;
+
+        let newWhitePiecesTaken = [...whitePiecesTaken];
+        let newBlackPiecesTaken = [...blackPiecesTaken];
+
+        if (currMove?.takenPieceId) {
+            if (isPlayerPiece(currMove.takenPieceId, 'w')) {
+                newWhitePiecesTaken.pop();
+            } else if (isPlayerPiece(currMove.takenPieceId, 'b')) {
+                newBlackPiecesTaken.pop();
+            }
+        }
 
         return {
             ...currState,
@@ -270,13 +294,16 @@ const reducer = (currState, action) => {
                 bkMoved: bkFirstMove ? false : castleContext.bkMoved,
                 brkMoved: brkFirstMove ? false : castleContext.brkMoved,
                 brqMoved: brqFirstMove ? false : castleContext.brqMoved,
-            }
+            },
+            whitePiecesTaken: newWhitePiecesTaken,
+            blackPiecesTaken: newBlackPiecesTaken
         }
     }
 
     if (action.type === REDO) {
         const nextMoveIndex = currMoveIndex + 1;
-        const moveCastleContext = boardHistory[nextMoveIndex].move?.castleContext;
+        const nextMove = boardHistory[nextMoveIndex].move;
+        const moveCastleContext = nextMove?.castleContext;
 
         let wkFirstMove = moveCastleContext?.wkFirstMove || false;
         let wrkFirstMove = moveCastleContext?.wrkFirstMove || false;
@@ -284,6 +311,17 @@ const reducer = (currState, action) => {
         let bkFirstMove = moveCastleContext?.bkFirstMove || false;
         let brkFirstMove = moveCastleContext?.brkFirstMove || false;
         let brqFirstMove = moveCastleContext?.brqFirstMove || false;
+
+        let newWhitePiecesTaken = [...whitePiecesTaken];
+        let newBlackPiecesTaken = [...blackPiecesTaken];
+
+        if (nextMove?.takenPieceId) {
+            if (isPlayerPiece(nextMove.takenPieceId, 'w')) {
+                newWhitePiecesTaken.push(nextMove.takenPieceId);
+            } else if (isPlayerPiece(nextMove.takenPieceId, 'b')) {
+                newBlackPiecesTaken.push(nextMove.takenPieceId);
+            }
+        }
 
         return {
             ...currState,
@@ -296,7 +334,9 @@ const reducer = (currState, action) => {
                 bkMoved: bkFirstMove ? true : castleContext.bkMoved,
                 brkMoved: brkFirstMove ? true : castleContext.brkMoved,
                 brqMoved: brqFirstMove ? true : castleContext.brqMoved,
-            }
+            },
+            whitePiecesTaken: newWhitePiecesTaken,
+            blackPiecesTaken: newBlackPiecesTaken
         }
     }
 
@@ -308,33 +348,39 @@ const reducer = (currState, action) => {
 }
 
 const Game = ({ className }) => {
+    // parse saved state from session storage
     const savedBoardStr = sessionStorage.getItem(BOARD_STATE_KEY);
     const savedBoard = savedBoardStr ? JSON.parse(savedBoardStr) : null;
     const savedCastleStateStr = sessionStorage.getItem(CASTLE_STATE_KEY);
     const savedCastleState = savedCastleStateStr ? JSON.parse(savedCastleStateStr) : null;
-
-    const [gameState, dispatch] = useReducer(reducer, {
-        ...initState,
-        board: savedBoard || START_BOARD,
-        boardHistory: [{ board: savedBoard || START_BOARD, move: null }],
-        castleContext: savedCastleState || initState.castleContext
-    });
-
     const savedPlayerTurn = sessionStorage.getItem(PLAYER_MOVE_KEY);
     const savedWpTakenStr = sessionStorage.getItem(WHITE_PIECES_TAKEN_KEY);
     const savedWpTaken = savedWpTakenStr ? JSON.parse(savedWpTakenStr) : null;
     const savedBpTakenStr = sessionStorage.getItem(BLACK_PIECES_TAKEN_KEY);
     const savedBpTaken = savedBpTakenStr ? JSON.parse(savedBpTakenStr) : null;
 
+    const [gameState, dispatch] = useReducer(reducer, {
+        ...initState,
+        board: savedBoard || START_BOARD,
+        boardHistory: [{ board: savedBoard || START_BOARD, move: null }],
+        castleContext: savedCastleState || initState.castleContext,
+        whitePiecesTaken: savedWpTaken || [],
+        blackPiecesTaken: savedBpTaken || [],
+    });
+
     const [playerTurn, setPlayerTurn] = useState(savedPlayerTurn || 'w');
-    const [whiteTakenPieces, setWhiteTakenPieces] = useState(savedWpTaken || []);
-    const [blackTakenPieces, setBlackTakenPieces] = useState(savedBpTaken || []);
 
     useEffect(() => {
         sessionStorage.setItem(PLAYER_MOVE_KEY, playerTurn);
-        sessionStorage.setItem(WHITE_PIECES_TAKEN_KEY, JSON.stringify(whiteTakenPieces));
-        sessionStorage.setItem(BLACK_PIECES_TAKEN_KEY, JSON.stringify(blackTakenPieces));
-    }, [playerTurn, whiteTakenPieces, blackTakenPieces]);
+    }, [playerTurn]);
+
+    useEffect(() => {
+        sessionStorage.setItem(WHITE_PIECES_TAKEN_KEY, JSON.stringify(gameState.whitePiecesTaken));
+    }, [gameState.whitePiecesTaken]);
+
+    useEffect(() => {
+        sessionStorage.setItem(BLACK_PIECES_TAKEN_KEY, JSON.stringify(gameState.blackPiecesTaken));
+    }, [gameState.blackPiecesTaken]);
 
     useEffect(() => {
         sessionStorage.setItem(BOARD_STATE_KEY, JSON.stringify(gameState.board));
@@ -355,21 +401,9 @@ const Game = ({ className }) => {
         });
     }
 
-    const onPieceTaken = (pieceId) => {
-        if (isPlayerPiece(pieceId, 'w')) {
-            setWhiteTakenPieces(prev => [...prev, pieceId]);
-        }
-
-        if (isPlayerPiece(pieceId, 'b')) {
-            setBlackTakenPieces(prev => [...prev, pieceId]);
-        }
-    }
-
     const restartGame = useCallback(() => {
         dispatch({ type: RESTART })
         setPlayerTurn('w');
-        setWhiteTakenPieces([]);
-        setBlackTakenPieces([]);
     }, []);
 
     const onRestart = () => {
@@ -430,7 +464,7 @@ const Game = ({ className }) => {
                 className
             )}>
                 <div className='player-taken-pieces-container'>
-                    {whiteTakenPieces.map((pieceId, index) => {
+                    {gameState.whitePiecesTaken.map((pieceId, index) => {
                         return (
                             <div key={index} className='w-8 h-8'>
                                 {PIECE_ICONS[pieceId]}
@@ -440,11 +474,10 @@ const Game = ({ className }) => {
                 </div>
                 <ChessBoard
                     playerTurn={playerTurn}
-                    onPieceTaken={onPieceTaken}
                     onRestart={restartGame}
                 />
                 <div className='player-taken-pieces-container'>
-                    {blackTakenPieces.map((pieceId, index) => {
+                    {gameState.blackPiecesTaken.map((pieceId, index) => {
                         return (
                             <div key={index} className='w-8 h-8'>
                                 {PIECE_ICONS[pieceId]}
