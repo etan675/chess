@@ -223,10 +223,11 @@ const getCastledBoard = (player, side, board) => {
 }
 
 const isLegalCastle = (player, side, board) => {
+    const notInCheck = !isInCheck(player, board);
     // simulate new board state after the castle
     const newBoard = getCastledBoard(player, side, board);
 
-    return !isInCheck(player, newBoard);
+    return notInCheck && !isInCheck(player, newBoard);
 }
 
 const getLegalSquares = (player, pieceId, currPos, board) => {
