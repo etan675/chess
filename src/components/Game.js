@@ -50,6 +50,7 @@ const reducer = (currState, action) => {
 
         let newBoard = board.map(row => [...row]);
         let newBoardHistory = [...boardHistory];
+        let move = null;
 
         if (player === 'b') {
             if (side === 'k') {
@@ -58,11 +59,25 @@ const reducer = (currState, action) => {
                 newBoard[0][7] = 0;
                 newBoard[0][5] = BLACK_ROOK;
 
+                move = {
+                    movedPieceId: BLACK_KING,
+                    prevPos: { row: 0, col: 4 },
+                    newPos: { row: 0, col: 6 },
+                    takenPieceId: 0
+                }
+
             } else if (side === 'q') {
                 newBoard[0][4] = 0;
                 newBoard[0][2] = BLACK_KING;
                 newBoard[0][0] = 0;
                 newBoard[0][3] = BLACK_ROOK;
+
+                move = {
+                    movedPieceId: BLACK_KING,
+                    prevPos: { row: 0, col: 4 },
+                    newPos: { row: 0, col: 2 },
+                    takenPieceId: 0
+                }
             }
 
         } else if (player === 'w') {
@@ -72,11 +87,25 @@ const reducer = (currState, action) => {
                 newBoard[7][7] = 0;
                 newBoard[7][5] = WHITE_ROOK;
 
+                move = {
+                    movedPiece: WHITE_KING,
+                    prevPos: { row: 7, col: 4 },
+                    newPos: { row: 7, col: 6 },
+                    takenPieceId: 0
+                }
+
             } else if (side === 'q') {
                 newBoard[7][4] = 0;
                 newBoard[7][2] = WHITE_KING;
                 newBoard[7][0] = 0;
                 newBoard[7][3] = WHITE_ROOK;
+
+                move = {
+                    movedPiece: WHITE_KING,
+                    prevPos: { row: 7, col: 4 },
+                    newPos: { row: 7, col: 2 },
+                    takenPieceId: 0
+                }
             }
         }
 
@@ -84,11 +113,7 @@ const reducer = (currState, action) => {
             newBoardHistory = boardHistory.slice(0, currMoveIndex + 1);
         }
 
-        newBoardHistory.push({
-            board: newBoard,
-            // move is blank on castle for now
-            move: {}
-        });
+        newBoardHistory.push({ board: newBoard, move });
 
         return {
             board: newBoard,
@@ -222,6 +247,7 @@ const Game = ({ className }) => {
         <BoardContext.Provider
             value={{
                 board: gameState.board,
+                prevMove: gameState.boardHistory[gameState.currMoveIndex]?.move ?? null,
                 onMove,
                 onCastle
             }}

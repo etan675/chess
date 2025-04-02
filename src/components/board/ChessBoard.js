@@ -3,7 +3,7 @@ import classNames from 'classnames';
 
 import "../../css/Board.css"
 import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../lib/utils';
-import { PIECE_ICONS, BLACK_KING, WHITE_KING, BOARD_STATE_KEY } from '../../constants';
+import { PIECE_ICONS, BOARD_STATE_KEY } from '../../constants';
 import { subscribe } from '../../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../../lib/events/types';
 import boardContext from '../../contexts/board-context';
@@ -13,17 +13,9 @@ const ChessBoard = ({
   onPieceTaken,
   onRestart,
 }) => {
-  const { board, onMove, onCastle } = useContext(boardContext);
+  const { board, prevMove, onMove, onCastle } = useContext(boardContext);
 
   const [winner, setWinner] = useState(null);
-
-  const [prevMove, setPrevMove] = useState({
-    movedPiece: 0,
-    prevPos: { row: -1, col: -1 },
-    newPos: { row: -1, col: -1 },
-    pieceTaken: 0
-  });
-
   const [legalSquares, setLegalSquares] = useState([]);
 
   const castlePiecesRef = useRef({
@@ -109,13 +101,6 @@ const ChessBoard = ({
       // dropped pos had enemy piece
       onPieceTaken(droppedPieceId);
     }
-
-    setPrevMove({
-      movedPiece: draggedPieceId,
-      prevPos,
-      newPos,
-      pieceTaken: droppedPieceId
-    });
   }
 
   const handleKingsideCastleAttempt = (player) => {
@@ -125,7 +110,7 @@ const ChessBoard = ({
       !castlePiecesRef.current.whiteRookKingside.hasMoved &&
       isHorizontalPathClear(WK_START_POS, WRK_START_POS, board)
     ) {
-      handleWhiteKingsideCastle();
+      onCastle('w', 'k');
     }
 
     if (
@@ -134,7 +119,7 @@ const ChessBoard = ({
       !castlePiecesRef.current.blackRookKingside.hasMoved &&
       isHorizontalPathClear(BK_START_POS, BRK_START_POS, board)
     ) {
-      handleBlackKingsideCastle();
+      onCastle('b', 'k');
     }
   }
 
@@ -145,7 +130,7 @@ const ChessBoard = ({
       !castlePiecesRef.current.whiteRookQueenside.hasMoved &&
       isHorizontalPathClear(WK_START_POS, WRQ_START_POS, board)
     ) {
-      handleWhiteQueensideCastle();
+      onCastle('w', 'q');
     }
 
     if (
@@ -154,64 +139,13 @@ const ChessBoard = ({
       !castlePiecesRef.current.blackRookQueenside.hasMoved &&
       isHorizontalPathClear(BK_START_POS, BRQ_START_POS, board)
     ) {
-      handleBlackQueensideCastle();
+      onCastle('b', 'q');
     }
-  }
-
-  const handleWhiteKingsideCastle = () => {
-    onCastle('w', 'k');
-
-    setPrevMove({
-      movedPiece: WHITE_KING,
-      prevPos: { row: 7, col: 4 },
-      newPos: { row: 7, col: 6 },
-      pieceTaken: 0
-    });
-  }
-
-  const handleWhiteQueensideCastle = () => {
-    onCastle('w', 'q');
-
-    setPrevMove({
-      movedPiece: WHITE_KING,
-      prevPos: { row: 7, col: 4 },
-      newPos: { row: 7, col: 2 },
-      pieceTaken: 0
-    });
-  }
-
-  const handleBlackKingsideCastle = () => {
-    onCastle('b', 'k');
-
-    setPrevMove({
-      movedPiece: BLACK_KING,
-      prevPos: { row: 0, col: 4 },
-      newPos: { row: 0, col: 6 },
-      pieceTaken: 0
-    });
-  }
-
-  const handleBlackQueensideCastle = () => {
-    onCastle('b', 'q');
-
-    setPrevMove({
-      movedPiece: BLACK_KING,
-      prevPos: { row: 0, col: 4 },
-      newPos: { row: 0, col: 2 },
-      pieceTaken: 0
-    });
   }
 
   const _onRestart = useCallback(() => {
     onRestart();
     setWinner(null);
-
-    setPrevMove({
-      movedPiece: 0,
-      prevPos: { row: -1, col: -1 },
-      newPos: { row: -1, col: -1 },
-      pieceTaken: 0
-    });
 
     castlePiecesRef.current = {
       whiteKing: { hasMoved: false },
@@ -273,7 +207,7 @@ const ChessBoard = ({
 
                 const rowIndex = 8 - i;
 
-                const isPrevMove = (
+                const isPrevMove = prevMove && (
                   (prevMove.prevPos.row === i && prevMove.prevPos.col === j) ||
                   (prevMove.newPos.row === i && prevMove.newPos.col === j)
                 );
@@ -341,11 +275,17 @@ const ChessBoard = ({
   )
 }
 
+// white king
 const WK_START_POS = { row: 7, col: 4 };
+// white rook kingside
 const WRK_START_POS = { row: 7, col: 7 };
+// white rook queenside
 const WRQ_START_POS = { row: 7, col: 0 };
+// black king
 const BK_START_POS = { row: 0, col: 4 };
+// black rook kingside
 const BRK_START_POS = { row: 0, col: 7 };
+// black rook queenside
 const BRQ_START_POS = { row: 0, col: 0 };
 
 const alphabetIndex = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
