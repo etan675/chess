@@ -2,8 +2,8 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from 'rea
 import classNames from 'classnames';
 
 import "../../css/Board.css"
-import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate } from '../../lib/utils';
-import { BK_START_POS, BRK_START_POS, BRQ_START_POS, PIECE_ICONS, WK_START_POS, WRQ_START_POS } from '../../constants';
+import { isLegalMove, isPlayerPiece, isKingsideCastleAttempt, isQueensideCastleAttempt, isHorizontalPathClear, getLegalSquares, isInCheck, isCheckMate, isLegalCastle } from '../../lib/utils';
+import { BK_START_POS, BRK_START_POS, BRQ_START_POS, PIECE_ICONS, WK_START_POS, WRK_START_POS, WRQ_START_POS } from '../../constants';
 import { subscribe } from '../../lib/events/eventBus';
 import { RESET_BOARD_EVENT } from '../../lib/events/types';
 import boardContext from '../../contexts/board-context';
@@ -74,10 +74,10 @@ const ChessBoard = ({
       handleMovePiece(draggedPiece.pieceId, pieceId, prevPos, newPos);
 
     } else if (isKingsideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
-      handleKingsideCastleAttempt(playerTurn);
+      handleKingsideCastleAttempt();
 
     } else if (isQueensideCastleAttempt(playerTurn, draggedPiece.pieceId, prevPos, newPos)) {
-      handleQueensideCastleAttempt(playerTurn);
+      handleQueensideCastleAttempt();
     }
   }
 
@@ -90,41 +90,45 @@ const ChessBoard = ({
     }
   }
 
-  const handleKingsideCastleAttempt = (player) => {
+  const handleKingsideCastleAttempt = () => {
     if (
-      player === 'w' &&
+      playerTurn === 'w' &&
       !castleContext.wkMoved &&
       !castleContext.wrkMoved &&
-      isHorizontalPathClear(WK_START_POS, WRQ_START_POS, board)
+      isHorizontalPathClear(WK_START_POS, WRK_START_POS, board) && 
+      isLegalCastle('w', 'k', board)
     ) {
       onCastle('w', 'k');
     }
 
     if (
-      player === 'b' &&
+      playerTurn === 'b' &&
       !castleContext.bkMoved &&
       !castleContext.brkMoved &&
-      isHorizontalPathClear(BK_START_POS, BRK_START_POS, board)
+      isHorizontalPathClear(BK_START_POS, BRK_START_POS, board) &&
+      isLegalCastle('b', 'k', board)
     ) {
       onCastle('b', 'k');
     }
   }
 
-  const handleQueensideCastleAttempt = (player) => {
+  const handleQueensideCastleAttempt = () => {
     if (
-      player === 'w' &&
+      playerTurn === 'w' &&
       !castleContext.wkMoved &&
       !castleContext.wrqMoved &&
-      isHorizontalPathClear(WK_START_POS, WRQ_START_POS, board)
+      isHorizontalPathClear(WK_START_POS, WRQ_START_POS, board) &&
+      isLegalCastle('w', 'q', board)
     ) {
       onCastle('w', 'q');
     }
 
     if (
-      player === 'b' &&
+      playerTurn === 'b' &&
       !castleContext.bkMoved &&
       !castleContext.brqMoved &&
-      isHorizontalPathClear(BK_START_POS, BRQ_START_POS, board)
+      isHorizontalPathClear(BK_START_POS, BRQ_START_POS, board) &&
+      isLegalCastle('b', 'q', board)
     ) {
       onCastle('b', 'q');
     }
